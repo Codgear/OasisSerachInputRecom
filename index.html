@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>搜索联想管理 - Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+/* 页签导航 */
+.tab-nav { display: flex; background: #fff; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 0 24px; position: sticky; top: 0; z-index: 100; }
+.tab-nav .tab-item { padding: 14px 24px; cursor: pointer; font-size: 14px; color: #666; border-bottom: 2px solid transparent; transition: all .2s; user-select: none; position: relative; }
+.tab-nav .tab-item:hover { color: #1890ff; }
+.tab-nav .tab-item.active { color: #1890ff; font-weight: 600; border-bottom-color: #1890ff; }
+
+/* 主容器 */
+.container { max-width: 1400px; margin: 24px auto; padding: 0 24px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* 空白占位页签 */
+.placeholder { background: #fff; border-radius: 8px; padding: 80px 0; text-align: center; color: #bbb; font-size: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+/* 操作栏 */
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.toolbar .title { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all .2s; font-family: inherit; }
+.btn-primary { background: #1890ff; color: #fff; }
+.btn-primary:hover { background: #40a9ff; }
+.btn-danger { background: #ff4d4f; color: #fff; }
+.btn-danger:hover { background: #ff7875; }
+.btn-outline { background: #fff; color: #1890ff; border: 1px solid #1890ff; }
+.btn-outline:hover { background: #e6f7ff; }
+.btn-ghost { background: transparent; color: #1890ff; padding: 4px 8px; }
+.btn-ghost:hover { background: #e6f7ff; }
+.btn-ghost.danger { color: #ff4d4f; }
+.btn-ghost.danger:hover { background: #fff1f0; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 筛选栏 */
+.filter-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+.filter-bar .form-input { width: auto; min-width: 180px; }
+.filter-item { display: flex; align-items: center; gap: 6px; }
+.filter-label { font-size: 13px; color: #666; white-space: nowrap; }
+.filter-separator { color: #999; font-size: 13px; }
+
+/* 表格 */
+.card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: #fafafa; padding: 12px 14px; text-align: left; font-weight: 600; color: #555; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+tbody td { padding: 12px 14px; border-bottom: 1px solid #f5f5f5; color: #444; vertical-align: middle; }
+tbody tr:hover { background: #fafbff; }
+.cover-thumb { width: 96px; height: 54px; border-radius: 6px; object-fit: cover; background: #48C1D5; flex-shrink: 0; }
+.keyword-tags { display: flex; flex-wrap: wrap; gap: 4px; max-width: 280px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: #f0f5ff; color: #2f54eb; border: 1px solid #d6e4ff; white-space: nowrap; }
+.tag.wildcard { background: #fff7e6; color: #d46b08; border-color: #ffd591; }
+.empty-row td { text-align: center; color: #bbb; padding: 60px 0; }
+
+/* 富文本编辑器 */
+.richtext-toolbar { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; }
+.richtext-toolbar .color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all .2s; padding: 0; }
+.richtext-toolbar .color-btn:hover { border-color: #999; transform: scale(1.15); }
+.richtext-toolbar .clear-btn:hover { border-color: #ff4d4f !important; color: #ff4d4f !important; }
+.richtext-editor { min-height: 38px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 6px; outline: none; font-size: 14px; line-height: 1.6; transition: border-color .2s; }
+.richtext-editor:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.15); }
+.richtext-editor:empty::before { content: attr(placeholder); color: #bbb; }
+.richtext-preview { margin-top: 8px; padding: 8px 12px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; }
+.richtext-preview #richtextPreviewContent { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+
+/* 状态标签 */
+.status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+.status-online { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.status-offline { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+.status-draft { background: #fffbe6; color: #d48806; border: 1px solid #ffe58f; }
+.status-active { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+.status-pending { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; }
+.status-expired { background: #f5f5f5; color: #999; border: 1px solid #d9d9d9; }
+
+/* 弹窗 */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn .2s; }
+.modal { background: #fff; border-radius: 10px; width: 720px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.15); animation: slideUp .25s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #f0f0f0; }
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 18px; color: #999; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.modal-close:hover { background: #f5f5f5; color: #333; }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid #f0f0f0; }
+
+/* 表单 */
+.form-group { margin-bottom: 18px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+.form-label .required { color: #ff4d4f; margin-left: 2px; }
+.form-input { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; font-family: inherit; transition: border-color .2s; outline: none; }
+.form-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.15); }
+.form-input.small { width: 200px; }
+.form-hint { font-size: 11px; color: #999; margin-top: 4px; }
+.form-row { display: flex; gap: 12px; align-items: flex-end; }
+.form-row .form-group { flex: 1; margin-bottom: 0; }
+
+/* 玩法选择区域 */
+.select-play-area { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 16px; margin-bottom: 10px; }
+.selected-play { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; margin-bottom: 10px; font-size: 13px; }
+.selected-play .play-info { flex: 1; }
+.selected-play .play-info span { color: #888; font-size: 12px; }
+.selected-play .remove-play { cursor: pointer; color: #ff4d4f; font-size: 16px; line-height: 1; padding: 2px; }
+
+/* 搜索弹窗中的搜索结果表格 */
+.search-result-table { max-height: 320px; overflow-y: auto; margin-top: 12px; }
+.search-result-table table { font-size: 12px; }
+.search-result-table tbody tr { cursor: pointer; }
+.search-result-table tbody tr:hover { background: #e6f7ff; }
+.search-result-table tbody tr.selected { background: #e6f7ff; border: 1px solid #1890ff; }
+
+/* 关键词输入 */
+.keyword-input-area { display: flex; gap: 8px; }
+.keyword-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.keyword-tag-removable { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 4px; font-size: 12px; background: #f0f5ff; color: #2f54eb; border: 1px solid #d6e4ff; }
+.keyword-tag-removable .remove { cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.6; margin-left: 2px; }
+.keyword-tag-removable .remove:hover { opacity: 1; }
+
+/* 时间输入 */
+.time-inputs { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.time-inputs input { width: auto; min-width: 140px; }
+.time-separator { color: #999; }
+
+/* 文本限制 */
+.char-count { font-size: 11px; color: #999; text-align: right; margin-top: 4px; }
+.char-count.over { color: #ff4d4f; }
+
+/* 标签切换 */
+.radio-group { display: flex; gap: 12px; }
+.radio-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+.radio-item input[type="radio"] { accent-color: #1890ff; }
+</style>
+</head>
+<body>
+
+<!-- 页签导航 -->
+<div class="tab-nav">
+  <div class="tab-item" data-tab="tab1">搜索关键词</div>
+  <div class="tab-item" data-tab="tab2">端内外显热搜词</div>
+  <div class="tab-item active" data-tab="tab3">搜索联想管理</div>
+  <div class="tab-item" data-tab="tab4">关键词黑名单</div>
+</div>
+
+<div class="container">
+  <!-- 页签1: 搜索关键词 - 占位 -->
+  <div id="tab1" class="tab-content">
+    <div class="placeholder">搜索关键词模块（占位）</div>
+  </div>
+
+  <!-- 页签2: 端内外显热搜词 - 占位 -->
+  <div id="tab2" class="tab-content">
+    <div class="placeholder">端内外显热搜词模块（占位）</div>
+  </div>
+
+  <!-- 页签3: 搜索联想管理 -->
+  <div id="tab3" class="tab-content active">
+    <div class="toolbar">
+      <span class="title">搜索联想资源列表</span>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ 新建联想资源</button>
+    </div>
+    <div class="card">
+      <div class="filter-bar">
+        <div class="filter-item">
+          <input type="text" class="form-input" id="filterSearch" placeholder="输入玩法ID或玩法名搜索" oninput="applyFilters()">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">生效时间：</span>
+          <input type="datetime-local" class="form-input" id="filterStartTime" onchange="applyFilters()">
+        </div>
+        <div class="filter-item">
+          <span class="filter-separator">至</span>
+          <input type="datetime-local" class="form-input" id="filterEndTime" onchange="applyFilters()">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">配置状态：</span>
+          <select class="form-input" id="filterConfigStatus" onchange="applyFilters()" style="min-width:100px;">
+            <option value="">全部</option>
+            <option value="已上架">已上架</option>
+            <option value="已下架">已下架</option>
+            <option value="草稿">草稿</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">资源状态：</span>
+          <select class="form-input" id="filterResStatus" onchange="applyFilters()" style="min-width:100px;">
+            <option value="">全部</option>
+            <option value="待生效">待生效</option>
+            <option value="生效中">生效中</option>
+            <option value="已失效">已失效</option>
+          </select>
+        </div>
+        <button class="btn btn-outline" onclick="clearFilters()" style="white-space:nowrap;">清除筛选</button>
+      </div>
+      <div class="table-wrap">
+        <table id="resourceTable">
+          <thead>
+            <tr>
+              <th style="width:120px">玩法ID</th>
+              <th style="width:150px">玩法名称</th>
+              <th style="width:110px">封面</th>
+              <th style="width:170px">推荐文案</th>
+              <th style="width:250px">匹配关键词</th>
+              <th style="width:240px">生效时间</th>
+              <th style="width:90px">置顶顺序</th>
+              <th style="width:80px">配置状态</th>
+              <th style="width:80px">资源状态</th>
+              <th style="width:150px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="resourceList">
+            <tr class="empty-row"><td colspan="10">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页签4: 关键词黑名单 - 占位 -->
+  <div id="tab4" class="tab-content">
+    <div class="placeholder">关键词黑名单模块（占位）</div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div class="overlay" id="modalOverlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">新建联想资源</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- 选择目标玩法 -->
+      <div class="form-group">
+        <div class="form-label"><span class="required">*</span> 选择目标玩法</div>
+        <div id="selectedPlayDisplay"></div>
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <button class="btn btn-outline" onclick="openPlaySearchModal('工坊玩法')">选择工坊玩法</button>
+          <button class="btn btn-outline" onclick="openPlaySearchModal('共创玩法')">选择共创玩法</button>
+        </div>
+      </div>
+
+      <!-- 玩法名称 -->
+      <div class="form-group">
+        <div class="form-label">玩法名称</div>
+        <input type="text" class="form-input" id="playNameDisplay" readonly style="background:#f5f5f5;color:#888;">
+      </div>
+
+      <!-- 玩法封面 -->
+      <div class="form-group">
+        <div class="form-label">玩法封面</div>
+        <div id="playCoverDisplay">
+          <img id="playCoverImg" src="" alt="玩法封面" style="width:96px;height:54px;border-radius:6px;object-fit:cover;background:#f0f0f0;display:none;">
+          <img id="playCoverPlaceholder" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='54'%3E%3Crect fill='%23f0f0f0' width='96' height='54' rx='6'/%3E%3Ctext x='48' y='30' text-anchor='middle' fill='%23bbb' font-size='12' font-family='sans-serif'%3E预览图%3C/text%3E%3C/svg%3E" alt="默认封面" style="width:96px;height:54px;border-radius:6px;object-fit:cover;">
+        </div>
+      </div>
+
+      <!-- 推荐文案 -->
+      <div class="form-group">
+        <div class="form-label"><span class="required">*</span> 推荐文案</div>
+        <div class="richtext-toolbar">
+          <button class="color-btn" style="background:#FF6600;" onclick="applyRichColor('#FF6600')" title="橙色高亮"></button>
+          <button class="color-btn clear-btn" onclick="clearRichFormat()" title="清除格式" style="border:1px solid #d9d9d9;background:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px;color:#999;display:flex;align-items:center;justify-content:center;">A</button>
+        </div>
+        <div class="richtext-editor" id="interventionText" contenteditable="true" placeholder="请输入推荐文案" oninput="onRichTextInput()"></div>
+        <div class="char-count" id="interventionTextCount">0/25</div>
+        <div class="richtext-preview" id="richtextPreview" style="display:none;">
+          <div class="form-label" style="font-size:12px;color:#999;margin-bottom:4px;">预览效果</div>
+          <div id="richtextPreviewContent"></div>
+        </div>
+      </div>
+
+      <!-- 匹配关键词 -->
+      <div class="form-group">
+        <div class="form-label"><span class="required">*</span> 匹配关键词</div>
+        <div class="keyword-input-area">
+          <input type="text" class="form-input" id="keywordInput" placeholder="输入匹配关键词后按回车添加（最长5个汉字，输入 * 表示任意内容）" maxlength="5">
+          <button class="btn btn-primary" onclick="addKeyword()" style="white-space:nowrap;">添加</button>
+        </div>
+        <div class="form-hint">每个关键词最长10个汉字，输入 * 表示玩家输入任意内容都将触发推荐</div>
+        <div class="keyword-list" id="keywordTags"></div>
+      </div>
+
+      <!-- 生效时间 -->
+      <div class="form-group">
+        <div class="form-label"><span class="required">*</span> 生效时间</div>
+        <div class="time-inputs">
+          <input type="datetime-local" class="form-input" id="startTime" step="1">
+          <span class="time-separator">至</span>
+          <input type="datetime-local" class="form-input" id="endTime" step="1">
+        </div>
+      </div>
+
+      <!-- 置顶顺序 -->
+      <div class="form-group">
+        <div class="form-label">置顶顺序</div>
+        <input type="number" class="form-input small" id="priority" value="1" min="0" step="1">
+        <div class="form-hint">数值越大，在多个结果中越靠前展示</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f5f5f5;color:#666;" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveResource()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 玩法搜索子弹窗 -->
+<div class="overlay" id="playSearchOverlay" style="display:none;">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="playSearchModalTitle">选择玩法</h3>
+      <button class="modal-close" onclick="closePlaySearchModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" class="form-input" id="playSearchModalInput" placeholder="输入玩法ID或名称进行搜索">
+        </div>
+        <button class="btn btn-primary" style="padding:8px 16px;" onclick="searchPlayInModal()">搜索</button>
+      </div>
+      <div id="playSearchModalResults" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f5f5f5;color:#666;" onclick="closePlaySearchModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 操作日志弹窗 -->
+<div class="overlay" id="logOverlay" style="display:none;">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="logModalTitle">操作日志</h3>
+      <button class="modal-close" onclick="closeLogModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="logContent" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f5f5f5;color:#666;" onclick="closeLogModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ 页签切换 ============
+document.querySelectorAll('.tab-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById(this.dataset.tab).classList.add('active');
+  });
+});
+
+// ============ 数据存储 ============
+let resources = [
+  {
+    id: 1,
+    playId: '1001234',
+    playName: '小辣条被骗1《双人版》',
+    playAuthor: '张三',
+    playAuthorId: 'U001',
+    playType: '工坊玩法',
+    text: '<span style="color:#FF6600">双人合作</span>挑战小辣条',
+    keywords: ['小辣条', '双人', '合作'],
+    startTime: '2026-07-01 00:00:00',
+    endTime: '2026-09-30 23:59:59',
+    priority: 10,
+    configStatus: '已上架'
+  },
+  {
+    id: 2,
+    playId: '2005678',
+    playName: '一命速通了吗3',
+    playAuthor: '李四',
+    playAuthorId: 'U002',
+    playType: '共创玩法',
+    text: '<span style="color:#FF6600">一命速通</span>极限挑战',
+    keywords: ['速通', '一命', '极限'],
+    startTime: '2026-08-01 00:00:00',
+    endTime: '2026-10-31 23:59:59',
+    priority: 5,
+    configStatus: '已上架'
+  },
+  {
+    id: 3,
+    playId: '1009876',
+    playName: '不能红温2',
+    playAuthor: '王五',
+    playAuthorId: 'U003',
+    playType: '工坊玩法',
+    text: '<span style="color:#FF6600">保持冷静</span>不能红温',
+    keywords: ['红温', '冷静', '心态'],
+    startTime: '2026-07-15 00:00:00',
+    endTime: '2026-12-31 23:59:59',
+    priority: 20,
+    configStatus: '已上架'
+  },
+  {
+    id: 4,
+    playId: '1001111',
+    playName: '一万个雪人躲猫猫',
+    playAuthor: '赵六',
+    playAuthorId: 'U004',
+    playType: '工坊玩法',
+    text: '雪人躲猫猫大作战',
+    keywords: ['雪人', '躲猫猫', '捉迷藏'],
+    startTime: '2026-07-01 00:00:00',
+    endTime: '2026-08-31 23:59:59',
+    priority: 8,
+    configStatus: '已下架'
+  },
+  {
+    id: 5,
+    playId: '2006666',
+    playName: '开大运逃离伟人双人版',
+    playAuthor: '冯十一',
+    playAuthorId: 'U009',
+    playType: '共创玩法',
+    text: '双人开大运逃离挑战',
+    keywords: ['大运', '逃离', '双人'],
+    startTime: '2026-08-01 00:00:00',
+    endTime: '2026-11-30 23:59:59',
+    priority: 15,
+    configStatus: '草稿'
+  },
+  {
+    id: 6,
+    playId: '1002222',
+    playName: '熊二熊大来了快跑一',
+    playAuthor: '孙七',
+    playAuthorId: 'U005',
+    playType: '工坊玩法',
+    text: '熊大熊二追来了快跑',
+    keywords: ['熊大', '熊二', '逃跑'],
+    startTime: '2026-07-20 00:00:00',
+    endTime: '2026-10-20 23:59:59',
+    priority: 12,
+    configStatus: '已上架'
+  },
+  {
+    id: 7,
+    playId: '2007777',
+    playName: '大仓2v2缩小1000倍躲猫猫',
+    playAuthor: '陈十二',
+    playAuthorId: 'U010',
+    playType: '共创玩法',
+    text: '2v2缩小千倍躲猫猫',
+    keywords: ['大仓', '2v2', '缩小'],
+    startTime: '2026-09-01 00:00:00',
+    endTime: '2026-12-01 23:59:59',
+    priority: 7,
+    configStatus: '已下架'
+  },
+  {
+    id: 8,
+    playId: '1003333',
+    playName: '不要踩红线1',
+    playAuthor: '周八',
+    playAuthorId: 'U006',
+    playType: '工坊玩法',
+    text: '小心别踩到红线哦',
+    keywords: ['红线', '躲避', '陷阱'],
+    startTime: '2026-07-10 00:00:00',
+    endTime: '2026-09-10 23:59:59',
+    priority: 6,
+    configStatus: '已上架'
+  },
+  {
+    id: 9,
+    playId: '2008888',
+    playName: '去打工赚钱提车',
+    playAuthor: '褚十三',
+    playAuthorId: 'U011',
+    playType: '共创玩法',
+    text: '打工赚钱升级提车',
+    keywords: ['打工', '赚钱', '提车'],
+    startTime: '2026-08-15 00:00:00',
+    endTime: '2026-11-15 23:59:59',
+    priority: 9,
+    configStatus: '草稿'
+  }
+];
+let nextId = 10;
+
+// 模拟操作日志
+const operationLogs = {
+  1: [
+    { time: '2026-07-28 10:30:00', action: '编辑', operator: '张三', detail: '修改推荐文案为"双人合作挑战小辣条"，调整置顶顺序为10' },
+    { time: '2026-07-01 09:00:00', action: '创建', operator: '张三', detail: '创建联想资源，玩法：小辣条被骗1《双人版》' }
+  ],
+  2: [
+    { time: '2026-07-20 14:15:00', action: '编辑', operator: '李四', detail: '新增关键词"极限"，调整生效时间至2026-10-31' },
+    { time: '2026-07-05 11:00:00', action: '创建', operator: '李四', detail: '创建联想资源，玩法：一命速通了吗3' }
+  ],
+  3: [
+    { time: '2026-07-25 16:45:00', action: '编辑', operator: '王五', detail: '修改推荐文案为"保持冷静不能红温"，调整置顶顺序为20' },
+    { time: '2026-07-10 08:30:00', action: '创建', operator: '王五', detail: '创建联想资源，玩法：不能红温2' }
+  ],
+  4: [
+    { time: '2026-07-15 13:20:00', action: '创建', operator: '赵六', detail: '创建联想资源，玩法：一万个雪人躲猫猫' }
+  ],
+  5: [
+    { time: '2026-07-22 09:50:00', action: '编辑', operator: '冯十一', detail: '修改生效时间区间，调整置顶顺序为15' },
+    { time: '2026-07-18 10:00:00', action: '创建', operator: '冯十一', detail: '创建联想资源，玩法：开大运逃离伟人双人版' }
+  ],
+  6: [
+    { time: '2026-07-20 11:00:00', action: '创建', operator: '孙七', detail: '创建联想资源，玩法：熊二熊大来了快跑一' }
+  ],
+  7: [
+    { time: '2026-07-27 15:30:00', action: '编辑', operator: '陈十二', detail: '将生效结束时间延长至2026-12-31' },
+    { time: '2026-07-23 10:00:00', action: '创建', operator: '陈十二', detail: '创建联想资源，玩法：大仓2v2缩小1000倍躲猫猫' }
+  ],
+  8: [
+    { time: '2026-07-12 08:00:00', action: '创建', operator: '周八', detail: '创建联想资源，玩法：不要踩红线1' }
+  ],
+  9: [
+    { time: '2026-07-21 14:10:00', action: '编辑', operator: '褚十三', detail: '修改推荐文案为"打工赚钱升级提车"' },
+    { time: '2026-07-19 09:30:00', action: '创建', operator: '褚十三', detail: '创建联想资源，玩法：去打工赚钱提车' }
+  ]
+};
+
+// 模拟玩法数据库
+const mockGames = {
+  '工坊玩法': [
+    { playId: '1001234', playName: '王者荣耀-深渊模式', authorName: '张三', authorId: 'U001' },
+    { playId: '1009876', playName: '和平精英-极寒地图', authorName: '王五', authorId: 'U003' },
+    { playId: '1001111', playName: '我的世界-天空之城', authorName: '赵六', authorId: 'U004' },
+    { playId: '1002222', playName: '迷你世界-海底探险', authorName: '孙七', authorId: 'U005' },
+    { playId: '1003333', playName: '元气骑士-地牢迷宫', authorName: '周八', authorId: 'U006' },
+    { playId: '1004444', playName: '明日方舟-危机合约', authorName: '吴九', authorId: 'U007' },
+    { playId: '1005555', playName: '崩坏3-记忆战场', authorName: '郑十', authorId: 'U008' }
+  ],
+  '共创玩法': [
+    { playId: '2005678', playName: '蛋仔派对-糖果乐园', authorName: '李四', authorId: 'U002' },
+    { playId: '2006666', playName: '开心消消乐-冰雪奇缘', authorName: '冯十一', authorId: 'U009' },
+    { playId: '2007777', playName: '球球大作战-星际争霸', authorName: '陈十二', authorId: 'U010' },
+    { playId: '2008888', playName: '贪吃蛇大作战-丛林冒险', authorName: '褚十三', authorId: 'U011' },
+    { playId: '2009999', playName: '汤姆猫跑酷-城市追逐', authorName: '卫十四', authorId: 'U012' }
+  ]
+};
+
+// ============ 筛选逻辑 ============
+function getResourceStatus(startTime, endTime) {
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (now < start) return '待生效';
+  if (now > end) return '已失效';
+  return '生效中';
+}
+
+function getCoverUrl(playId) {
+  const label = playId.slice(-4);
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90"><rect fill="#48C1D5" width="160" height="90" rx="6"/><text x="80" y="50" text-anchor="middle" fill="white" font-size="15" font-family="sans-serif" font-weight="bold">${label}</text></svg>`)}`;
+}
+
+function getFilteredResources() {
+  const keyword = (document.getElementById('filterSearch')?.value || '').trim().toLowerCase();
+  const fs = (document.getElementById('filterStartTime')?.value || '').trim();
+  const fe = (document.getElementById('filterEndTime')?.value || '').trim();
+  const configStatus = (document.getElementById('filterConfigStatus')?.value || '').trim();
+  const resStatus = (document.getElementById('filterResStatus')?.value || '').trim();
+
+  return resources.filter(r => {
+    // 按玩法ID/名称搜索
+    if (keyword) {
+      const matchId = r.playId.toLowerCase().includes(keyword);
+      const matchName = r.playName.toLowerCase().includes(keyword);
+      if (!matchId && !matchName) return false;
+    }
+    // 按生效时间筛选：资源生效区间与筛选区间有交集即显示
+    if (fs) {
+      if (r.endTime < fs) return false;
+    }
+    if (fe) {
+      if (r.startTime > fe) return false;
+    }
+    // 按配置状态筛选
+    if (configStatus && r.configStatus !== configStatus) return false;
+    // 按资源状态筛选
+    if (resStatus && getResourceStatus(r.startTime, r.endTime) !== resStatus) return false;
+    return true;
+  });
+}
+
+function applyFilters() {
+  renderTable();
+}
+
+function clearFilters() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterStartTime').value = '';
+  document.getElementById('filterEndTime').value = '';
+  document.getElementById('filterConfigStatus').value = '';
+  document.getElementById('filterResStatus').value = '';
+  renderTable();
+}
+
+// ============ 渲染列表 ============
+function renderTable() {
+  const tbody = document.getElementById('resourceList');
+  const filtered = getFilteredResources();
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">暂无数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(r => {
+    const keywordTags = r.keywords.map(k => {
+      const cls = k === '*' ? 'tag wildcard' : 'tag';
+      return `<span class="${cls}">${k}</span>`;
+    }).join('');
+    const configCls = r.configStatus === '已上架' ? 'status-online' : r.configStatus === '已下架' ? 'status-offline' : 'status-draft';
+    const resStatus = getResourceStatus(r.startTime, r.endTime);
+    const resCls = resStatus === '生效中' ? 'status-active' : resStatus === '待生效' ? 'status-pending' : 'status-expired';
+    return `
+      <tr>
+        <td>${r.playId}</td>
+        <td>${r.playName}</td>
+        <td><img class="cover-thumb" src="${getCoverUrl(r.playId)}" alt="${r.playName}" loading="lazy"></td>
+        <td>${r.text}</td>
+        <td><div class="keyword-tags">${keywordTags}</div></td>
+        <td>${r.startTime} ~ ${r.endTime}</td>
+        <td>${r.priority}</td>
+        <td><span class="status-tag ${configCls}">${r.configStatus}</span></td>
+        <td><span class="status-tag ${resCls}">${resStatus}</span></td>
+        <td>
+          <button class="btn btn-ghost" onclick="openEditModal(${r.id})">编辑</button>
+          <button class="btn btn-ghost danger" onclick="deleteResource(${r.id})">删除</button>
+          <button class="btn btn-ghost" style="color:#1890ff;" onclick="openLogModal(${r.id})">操作日志</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ============ 删除资源 ============
+function deleteResource(id) {
+  if (!confirm('确定要删除该联想资源吗？此操作不可撤销。')) return;
+  resources = resources.filter(r => r.id !== id);
+  renderTable();
+}
+
+// ============ 创建/编辑弹窗状态 ============
+let editingId = null;
+let selectedPlay = null; // { playId, playName, playType, authorName, authorId }
+let currentKeywords = [];
+let playSearchModalResults = [];
+let playSearchModalType = '';
+
+// ============ 打开创建弹窗 ============
+function openCreateModal() {
+  editingId = null;
+  selectedPlay = null;
+  currentKeywords = [];
+  document.getElementById('modalTitle').textContent = '新建联想资源';
+  document.getElementById('interventionText').innerHTML = '';
+  document.getElementById('interventionTextCount').textContent = '0/25';
+  document.getElementById('keywordInput').value = '';
+  document.getElementById('startTime').value = '';
+  document.getElementById('endTime').value = '';
+  document.getElementById('priority').value = '1';
+  renderSelectedPlay();
+  renderKeywordTags();
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+// ============ 打开编辑弹窗 ============
+function openEditModal(id) {
+  const r = resources.find(r => r.id === id);
+  if (!r) return;
+  editingId = id;
+  selectedPlay = {
+    playId: r.playId,
+    playName: r.playName,
+    playType: r.playType,
+    authorName: r.playAuthor,
+    authorId: r.playAuthorId
+  };
+  currentKeywords = [...r.keywords];
+
+  document.getElementById('modalTitle').textContent = '编辑联想资源';
+  document.getElementById('interventionText').innerHTML = r.text;
+  onRichTextInput();
+  document.getElementById('keywordInput').value = '';
+  document.getElementById('startTime').value = r.startTime;
+  document.getElementById('endTime').value = r.endTime;
+  document.getElementById('priority').value = r.priority;
+  renderSelectedPlay();
+  renderKeywordTags();
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+// ============ 关闭弹窗 ============
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+
+// ============ 操作日志 ============
+function openLogModal(id) {
+  const res = resources.find(r => r.id === id);
+  document.getElementById('logModalTitle').textContent = `操作日志 - ${res ? res.playName : '未知'}`;
+  const logs = operationLogs[id] || [];
+  const content = document.getElementById('logContent');
+  if (logs.length === 0) {
+    content.innerHTML = '<div style="text-align:center;color:#bbb;padding:30px 0;">暂无操作记录</div>';
+  } else {
+    content.innerHTML = logs.map((log, index) => {
+      const dotColor = log.action === '创建' ? '#52c41a' : '#1890ff';
+      return `
+        <div style="display:flex;padding:10px 0;border-bottom:1px solid #f5f5f5;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};margin:6px 10px 0 0;flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <span style="font-weight:600;color:#333;">${log.action}</span>
+              <span style="font-size:12px;color:#999;">${log.time}</span>
+              <span style="font-size:12px;color:#888;">操作人：${log.operator}</span>
+            </div>
+            <div style="font-size:13px;color:#666;">${log.detail}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('logOverlay').style.display = 'flex';
+}
+
+function closeLogModal() {
+  document.getElementById('logOverlay').style.display = 'none';
+}
+
+// ============ 玩法搜索子弹窗 ============
+function openPlaySearchModal(type) {
+  playSearchModalType = type;
+  playSearchModalResults = [];
+  document.getElementById('playSearchModalTitle').textContent = type === '工坊玩法' ? '选择工坊玩法' : '选择共创玩法';
+  document.getElementById('playSearchModalInput').value = '';
+  document.getElementById('playSearchModalResults').innerHTML = '';
+  document.getElementById('playSearchOverlay').style.display = 'flex';
+}
+
+function closePlaySearchModal() {
+  document.getElementById('playSearchOverlay').style.display = 'none';
+}
+
+function searchPlayInModal() {
+  const keyword = document.getElementById('playSearchModalInput').value.trim();
+  const list = mockGames[playSearchModalType] || [];
+  if (!keyword) {
+    playSearchModalResults = [];
+  } else {
+    playSearchModalResults = list.filter(g =>
+      g.playId.includes(keyword) ||
+      g.playName.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+  renderPlaySearchModalResults();
+}
+
+function renderPlaySearchModalResults() {
+  const container = document.getElementById('playSearchModalResults');
+  if (playSearchModalResults.length === 0) {
+    container.innerHTML = '<div style="color:#bbb;font-size:12px;text-align:center;padding:16px;">请输入玩法ID或名称进行搜索</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="search-result-table">
+      <table>
+        <thead>
+          <tr>
+            <th>玩法ID</th>
+            <th>玩法名</th>
+            <th>作者名</th>
+            <th>作者ID</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${playSearchModalResults.map(g => `
+            <tr class="${selectedPlay && selectedPlay.playId === g.playId ? 'selected' : ''}">
+              <td>${g.playId}</td>
+              <td>${g.playName}</td>
+              <td>${g.authorName}</td>
+              <td>${g.authorId}</td>
+              <td><button class="btn btn-outline" style="padding:3px 10px;font-size:12px;" onclick="selectPlayFromModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" ${selectedPlay && selectedPlay.playId === g.playId ? 'disabled' : ''}>选择</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function selectPlayFromModal(play) {
+  selectedPlay = { ...play, playType: playSearchModalType };
+  renderSelectedPlay();
+  closePlaySearchModal();
+}
+
+// ============ 移除已选玩法 ============
+function removeSelectedPlay() {
+  selectedPlay = null;
+  renderSelectedPlay();
+}
+
+// ============ 渲染已选玩法 ============
+function renderSelectedPlay() {
+  const container = document.getElementById('selectedPlayDisplay');
+  const nameInput = document.getElementById('playNameDisplay');
+  const coverImg = document.getElementById('playCoverImg');
+  const coverPlaceholder = document.getElementById('playCoverPlaceholder');
+  if (selectedPlay) {
+    container.innerHTML = `
+      <div class="selected-play">
+        <img class="cover-thumb" src="${getCoverUrl(selectedPlay.playId)}" alt="${selectedPlay.playName}">
+        <div class="play-info">
+          <strong>${selectedPlay.playName}</strong>
+          <span>（ID: ${selectedPlay.playId} | 作者: ${selectedPlay.authorName} | ${selectedPlay.playType}）</span>
+        </div>
+        <span class="remove-play" onclick="removeSelectedPlay()" title="移除">×</span>
+      </div>
+    `;
+    // 填充只读字段
+    nameInput.value = selectedPlay.playName;
+    coverImg.src = getCoverUrl(selectedPlay.playId);
+    coverImg.style.display = '';
+    coverPlaceholder.style.display = 'none';
+  } else {
+    container.innerHTML = '<div style="color:#bbb;font-size:13px;padding:8px 0;">尚未选择玩法，请点击下方按钮搜索并选择</div>';
+    // 清空只读字段，恢复默认占位图
+    nameInput.value = '';
+    coverImg.src = '';
+    coverImg.style.display = 'none';
+    coverPlaceholder.style.display = '';
+  }
+  updateRichTextPreview();
+}
+
+// ============ 推荐文案富文本 ============
+function getRichTextPlainLen() {
+  const el = document.getElementById('interventionText');
+  return (el.textContent || '').replace(/\s+/g, '').length;
+}
+
+function applyRichColor(color) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+  const span = document.createElement('span');
+  span.style.color = color;
+  try { range.surroundContents(span); } catch(e) {
+    // 跨元素选区时使用 execCommand 降级
+    document.execCommand('foreColor', false, color);
+  }
+  sel.removeAllRanges();
+  onRichTextInput();
+}
+
+function clearRichFormat() {
+  const el = document.getElementById('interventionText');
+  const txt = el.textContent || '';
+  el.innerHTML = txt;
+  onRichTextInput();
+}
+
+function updateRichTextPreview() {
+  const html = document.getElementById('interventionText').innerHTML.trim();
+  const playName = selectedPlay ? selectedPlay.playName : '';
+  const preview = document.getElementById('richtextPreview');
+  const previewContent = document.getElementById('richtextPreviewContent');
+  if (html || playName) {
+    let previewHtml = '猜你想搜：';
+    if (html) previewHtml += html;
+    if (playName) previewHtml += ' <span style="color:#FF6600;">' + playName + '</span>';
+    preview.style.display = '';
+    previewContent.innerHTML = previewHtml;
+  } else {
+    preview.style.display = 'none';
+    previewContent.innerHTML = '';
+  }
+}
+
+function onRichTextInput() {
+  const len = getRichTextPlainLen();
+  const max = 25;
+  const counter = document.getElementById('interventionTextCount');
+  counter.textContent = `${len}/${max}`;
+  counter.className = len > max ? 'char-count over' : 'char-count';
+  updateRichTextPreview();
+}
+
+// ============ 添加关键词 ============
+function addKeyword() {
+  const input = document.getElementById('keywordInput');
+  const val = input.value.trim();
+  if (!val) return;
+
+  // 检查：* 是通配符，单独处理
+  if (val === '*') {
+    if (currentKeywords.includes('*')) {
+      alert('通配符 * 已存在');
+      return;
+    }
+    currentKeywords = ['*'];
+    input.value = '';
+    renderKeywordTags();
+    return;
+  }
+
+  if (currentKeywords.includes('*')) {
+    alert('已设置通配符 *，不能同时添加其他关键词');
+    input.value = '';
+    return;
+  }
+
+  if (val.length > 10) {
+    alert('每个关键词最长不超过10个汉字');
+    return;
+  }
+
+  if (currentKeywords.includes(val)) {
+    alert('关键词已存在');
+    input.value = '';
+    return;
+  }
+
+  currentKeywords.push(val);
+  input.value = '';
+  renderKeywordTags();
+}
+
+// ============ 移除关键词 ============
+function removeKeyword(index) {
+  currentKeywords.splice(index, 1);
+  renderKeywordTags();
+}
+
+// ============ 渲染关键词标签 ============
+function renderKeywordTags() {
+  const container = document.getElementById('keywordTags');
+  if (currentKeywords.length === 0) {
+    container.innerHTML = '<div style="color:#bbb;font-size:12px;">暂无关键词，请输入并添加</div>';
+    return;
+  }
+  container.innerHTML = currentKeywords.map((k, i) => `
+    <span class="keyword-tag-removable ${k === '*' ? 'tag wildcard' : ''}" style="${k === '*' ? 'background:#fff7e6;color:#d46b08;border-color:#ffd591;' : ''}">
+      ${k}
+      <span class="remove" onclick="removeKeyword(${i})">×</span>
+    </span>
+  `).join('');
+}
+
+// ============ 关键词输入回车 ============
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('keywordInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addKeyword();
+    }
+  });
+  document.getElementById('playSearchModalInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchPlayInModal();
+    }
+  });
+  document.getElementById('interventionText').addEventListener('keydown', function(e) {
+    // 禁止加粗快捷键 Ctrl+B / Cmd+B
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+    }
+  });
+});
+
+// ============ 点击遮罩关闭 ============
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============ 点击日志遮罩关闭 ============
+document.getElementById('logOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeLogModal();
+});
+
+// ============ 点击玩法搜索遮罩关闭 ============
+document.getElementById('playSearchOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closePlaySearchModal();
+});
+
+// ============ 保存（创建/编辑） ============
+function saveResource() {
+  // 校验玩法
+  if (!selectedPlay) {
+    alert('请选择目标玩法');
+    return;
+  }
+  // 校验推荐文案
+  const text = document.getElementById('interventionText').innerHTML.trim();
+  const plainLen = getRichTextPlainLen();
+  if (plainLen === 0) {
+    alert('请输入推荐文案');
+    return;
+  }
+  if (plainLen > 25) {
+    alert('推荐文案最长不超过25个字');
+    return;
+  }
+  // 校验关键词
+  if (currentKeywords.length === 0) {
+    alert('请至少添加一个关键词');
+    return;
+  }
+  // 校验时间
+  const startTime = document.getElementById('startTime').value.trim();
+  const endTime = document.getElementById('endTime').value.trim();
+  if (!startTime || !endTime) {
+    alert('请填写生效时间');
+    return;
+  }
+  if (startTime >= endTime) {
+    alert('结束时间必须晚于开始时间');
+    return;
+  }
+  // 校验优先级
+  const priority = parseInt(document.getElementById('priority').value) || 0;
+
+  const resourceData = {
+    playId: selectedPlay.playId,
+    playName: selectedPlay.playName,
+    playAuthor: selectedPlay.authorName,
+    playAuthorId: selectedPlay.authorId,
+    playType: selectedPlay.playType,
+    text,
+    keywords: [...currentKeywords],
+    startTime,
+    endTime,
+    priority
+  };
+
+  if (editingId !== null) {
+    // 编辑模式
+    const idx = resources.findIndex(r => r.id === editingId);
+    if (idx !== -1) {
+      resources[idx] = { ...resources[idx], ...resourceData };
+    }
+  } else {
+    // 创建模式
+    resources.push({ id: nextId++, ...resourceData });
+  }
+
+  closeModal();
+  renderTable();
+}
+
+// ============ 初始渲染 ============
+renderTable();
+</script>
+
+</body>
+</html>
